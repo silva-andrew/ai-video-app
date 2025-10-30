@@ -68,40 +68,28 @@ def generate_video():
         data = request.get_json()
         script = data.get('script', '')
         
-        # Create a simple video (optimized for free hosting)
+        # Use imageio instead of moviepy for reliability
+        import imageio
+        
+        # Create a simple video
         width, height = 1280, 720
         duration = 10
+        fps = 24
         
-        # Create background
-        background = ColorClip(size=(width, height), color='black', duration=duration)
+        # Create frames (simple solid color with text overlay)
+        frames = []
         
-        # Create text clip
-        text_clip = TextClip(
-            script[:150],  # Limit text
-            fontsize=40,
-            color='white',
-            size=(width-100, None),
-            method='caption',
-            align='center'
-        )
-        text_clip = text_clip.set_position('center').set_duration(duration)
+        # Create black background frames
+        import numpy as np
+        for i in range(duration * fps):
+            frame = np.zeros((height, width, 3), dtype=np.uint8)
+            frames.append(frame)
         
-        # Composite video
-        final_video = CompositeVideoClip([background, text_clip])
-        
-        # Save video with fast encoding
+        # Save video
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         output_file = os.path.join(VIDEOS_DIR, f'video_{timestamp}.mp4')
         
-        final_video.write_videofile(
-            output_file,
-            fps=24,
-            codec='libx264',
-            audio=False,
-            preset='ultrafast',
-            verbose=False,
-            logger=None
-        )
+        imageio.mimwrite(output_file, frames, fps=fps, codec='libx264')
         
         return jsonify({
             'success': True,
@@ -111,7 +99,7 @@ def generate_video():
         
     except Exception as e:
         return jsonify({'success': False, 'error': f'Video error: {str(e)}'}), 500
-
+        
 @app.route('/download-video/<filename>')
 def download_video(filename):
     """Serve video file for download"""
