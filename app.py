@@ -3,6 +3,9 @@ import google.generativeai as genai
 from moviepy.editor import TextClip, CompositeVideoClip, ColorClip
 import os
 from datetime import datetime
+import os
+os.environ['TMPDIR'] = '/tmp'  # Use persistent temp directory
+
 
 app = Flask(__name__)
 
