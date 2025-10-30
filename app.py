@@ -105,11 +105,17 @@ def generate_video():
         imageio.mimwrite(output_file, frames, fps=fps, codec='libx264')
         
         if os.path.exists(output_file):
-            return jsonify({
-                'success': True,
-                'video_url': f'/download-video/{os.path.basename(output_file)}',
-                'filename': os.path.basename(output_file)
-            })
+    file_size = os.path.getsize(output_file)
+    if file_size > 1000:  # At least 1KB
+        return jsonify({
+            'success': True,
+            'video_url': f'/download-video/{os.path.basename(output_file)}',
+            'filename': os.path.basename(output_file),
+            'size': file_size
+        })
+    else:
+        return jsonify({'success': False, 'error': 'Video file too small'}), 500
+
         else:
             return jsonify({'success': False, 'error': 'Video not created'}), 500
             
@@ -119,9 +125,17 @@ def generate_video():
 @app.route('/download-video/<filename>')
 def download_video(filename):
     """Serve video file for download"""
+    # Security: only allow filenames starting with 'video_'
+    if not filename.startswith('video_') or '..' in filename:
+        return jsonify({'error': 'Invalid filename'}), 400
+    
     video_path = os.path.join(VIDEOS_DIR, filename)
     if os.path.exists(video_path):
-        return send_file(video_path, as_attachment=True)
+        return send_file(
+            video_path,
+            as_attachment=False,  # Display in browser instead of download
+            mimetype='video/mp4'
+        )
     return jsonify({'error': 'Video not found'}), 404
 
 if __name__ == '__main__':
