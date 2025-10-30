@@ -343,14 +343,26 @@
             const videoOutput = document.getElementById('videoOutput');
             const videoPlayer = document.getElementById('videoPlayer');
             const downloadBtn = document.getElementById('downloadVideo');
-            
+    
+            // Set video source
             videoPlayer.src = data.video_url;
+            videoPlayer.load();  // Force reload
             videoOutput.style.display = 'block';
-            
-            downloadBtn.onclick = () => {
-                window.location.href = data.video_url;
-            };
-        }
+    
+            // Scroll to video
+            setTimeout(() => {
+            videoPlayer.scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+    
+        downloadBtn.onclick = () => {
+            const link = document.createElement('a');
+            link.href = data.video_url;
+            link.download = data.filename || 'video.mp4';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+    };
+}
         
         function showLoading(elementId, show) {
             const element = document.getElementById(elementId);
