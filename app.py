@@ -63,20 +63,43 @@ def generate_script():
 
 @app.route('/generate-video', methods=['POST'])
 def generate_video():
-    """Generate simple placeholder video"""
+    """Generate video using pure Python (no FFmpeg needed)"""
     try:
-        import subprocess
+        data = request.get_json()
+        script = data.get('script', '')
+        
+        # Create video using PIL/imageio (no FFmpeg needed)
+        import imageio
+        import numpy as np
+        from PIL import Image, ImageDraw, ImageFont
         
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         output_file = os.path.join(VIDEOS_DIR, f'video_{timestamp}.mp4')
         
-        # Create 8-second black video using ffmpeg
-        cmd = [
-            'ffmpeg', '-f', 'lavfi', '-i', 'color=c=black:s=640x480:d=8',
-            '-pix_fmt', 'yuv420p', '-y', output_file
-        ]
+        # Create frames
+        frames = []
+        width, height = 640, 480
+        duration = 8
+        fps = 12
+        total_frames = duration * fps
         
-        result = subprocess.run(cmd, capture_output=True, timeout=20)
+        # Create image with text
+        img = Image.new('RGB', (width, height), color=(0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        
+        # Add text to image
+        text = script[:80]  # Limit text
+        draw.text((50, 200), text, fill=(255, 255, 255))
+        
+        # Convert to numpy array
+        frame = np.array(img)
+        
+        # Repeat frame for duration
+        for _ in range(total_frames):
+            frames.append(frame)
+        
+        # Write video
+        imageio.mimwrite(output_file, frames, fps=fps, codec='libx264')
         
         if os.path.exists(output_file):
             return jsonify({
@@ -85,7 +108,7 @@ def generate_video():
                 'filename': os.path.basename(output_file)
             })
         else:
-            return jsonify({'success': False, 'error': 'Could not create video'}), 500
+            return jsonify({'success': False, 'error': 'Video not created'}), 500
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
