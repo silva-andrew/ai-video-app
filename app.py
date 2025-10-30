@@ -63,42 +63,32 @@ def generate_script():
 
 @app.route('/generate-video', methods=['POST'])
 def generate_video():
-    """Generate simple video from script"""
+    """Generate simple placeholder video"""
     try:
-        data = request.get_json()
-        script = data.get('script', '')
+        import subprocess
         
-        # Use imageio instead of moviepy for reliability
-        import imageio
-        
-        # Create a simple video
-        width, height = 1280, 720
-        duration = 10
-        fps = 24
-        
-        # Create frames (simple solid color with text overlay)
-        frames = []
-        
-        # Create black background frames
-        import numpy as np
-        for i in range(duration * fps):
-            frame = np.zeros((height, width, 3), dtype=np.uint8)
-            frames.append(frame)
-        
-        # Save video
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         output_file = os.path.join(VIDEOS_DIR, f'video_{timestamp}.mp4')
         
-        imageio.mimwrite(output_file, frames, fps=fps, codec='libx264')
+        # Create 8-second black video using ffmpeg
+        cmd = [
+            'ffmpeg', '-f', 'lavfi', '-i', 'color=c=black:s=640x480:d=8',
+            '-pix_fmt', 'yuv420p', '-y', output_file
+        ]
         
-        return jsonify({
-            'success': True,
-            'video_url': f'/download-video/{os.path.basename(output_file)}',
-            'filename': os.path.basename(output_file)
-        })
+        result = subprocess.run(cmd, capture_output=True, timeout=20)
         
+        if os.path.exists(output_file):
+            return jsonify({
+                'success': True,
+                'video_url': f'/download-video/{os.path.basename(output_file)}',
+                'filename': os.path.basename(output_file)
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Could not create video'}), 500
+            
     except Exception as e:
-        return jsonify({'success': False, 'error': f'Video error: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
         
 @app.route('/download-video/<filename>')
 def download_video(filename):
