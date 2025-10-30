@@ -58,17 +58,30 @@ def generate_script():
 @app.route('/generate-video', methods=['POST'])
 def generate_video():
     try:
-        import subprocess
+        from PIL import Image, ImageDraw
+        import imageio
+        import numpy as np
         
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         output_file = os.path.join(VIDEOS_DIR, f'video_{timestamp}.mp4')
         
-        cmd = [
-            'ffmpeg', '-f', 'lavfi', '-i', 'color=c=black:s=640x480:d=8',
-            '-pix_fmt', 'yuv420p', '-y', output_file
-        ]
+        # Create a simple image with text
+        width, height = 640, 480
+        img = Image.new('RGB', (width, height), color=(0, 0, 0))
+        draw = ImageDraw.Draw(img)
         
-        result = subprocess.run(cmd, capture_output=True, timeout=20)
+        # Add white text to black background
+        text = "Video Generated Successfully!"
+        draw.text((50, 200), text, fill=(255, 255, 255))
+        
+        # Convert to numpy array
+        frame_array = np.array(img)
+        
+        # Create frames (8 seconds at 12 fps = 96 frames)
+        frames = [frame_array] * 96
+        
+        # Write video using imageio
+        imageio.mimwrite(output_file, frames, fps=12, codec='libx264')
         
         if os.path.exists(output_file) and os.path.getsize(output_file) > 1000:
             return jsonify({
@@ -77,10 +90,10 @@ def generate_video():
                 'filename': os.path.basename(output_file)
             })
         else:
-            return jsonify({'success': False, 'error': 'Could not create video'}), 500
+            return jsonify({'success': False, 'error': 'Video creation failed'}), 500
             
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': f'Video error: {str(e)}'}), 500
 
 @app.route('/download-video/<filename>')
 def download_video(filename):
