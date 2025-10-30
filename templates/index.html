@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Video Script Generator</title>
+    <title>AI Script Generator</title>
     <style>
         * {
             margin: 0;
@@ -44,7 +44,6 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 20px;
         }
         
         .panel {
@@ -95,26 +94,13 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-        }
-        
-        .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
         
-        .btn-primary:hover {
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        
-        .btn-secondary {
-            background: #4CAF50;
-            color: white;
-            margin-top: 10px;
-        }
-        
-        .btn-secondary:hover {
-            background: #45a049;
         }
         
         .output-area {
@@ -155,10 +141,6 @@
             100% { transform: rotate(360deg); }
         }
         
-        .full-width {
-            grid-column: 1 / -1;
-        }
-        
         .metadata {
             display: flex;
             gap: 20px;
@@ -171,13 +153,6 @@
             display: flex;
             align-items: center;
             gap: 5px;
-        }
-        
-        video {
-            width: 100%;
-            max-width: 100%;
-            border-radius: 5px;
-            margin-top: 15px;
         }
         
         @media (max-width: 768px) {
@@ -194,27 +169,27 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎬 AI Video Script Generator</h1>
-            <p>Create amazing video scripts powered by AI</p>
+            <h1>✍️ AI Script Generator</h1>
+            <p>Generate amazing video scripts powered by AI - 100% Free!</p>
         </header>
         
         <div class="main-content">
             <!-- Script Generation Panel -->
             <div class="panel">
-                <h2>✍️ Generate Script</h2>
+                <h2>📝 Write Your Idea</h2>
                 <form id="scriptForm">
                     <div class="form-group">
-                        <label for="prompt">What should the video be about?</label>
+                        <label for="prompt">What should the script be about?</label>
                         <textarea 
                             id="prompt" 
                             rows="4" 
-                            placeholder="Example: A 30-second video about how solar panels work"
+                            placeholder="Example: A 30-second video about solar energy"
                             required
                         ></textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label for="style">Video Style</label>
+                        <label for="style">Script Style</label>
                         <select id="style">
                             <option value="educational">Educational</option>
                             <option value="marketing">Marketing</option>
@@ -222,7 +197,7 @@
                         </select>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary">Generate Script</button>
+                    <button type="submit" class="btn">Generate Script</button>
                 </form>
                 
                 <div id="loadingScript" class="loading">
@@ -233,9 +208,9 @@
             
             <!-- Script Output Panel -->
             <div class="panel">
-                <h2>📝 Your Script</h2>
+                <h2>🎯 Your Script</h2>
                 <div id="scriptOutput" class="output-area">
-                    <p class="placeholder">Your generated script will appear here...</p>
+                    <p class="placeholder">Your AI-generated script will appear here...</p>
                 </div>
                 
                 <div id="scriptMeta" class="metadata" style="display: none;">
@@ -243,33 +218,16 @@
                     <span>⏱️ Duration: <strong id="duration">0</strong>s</span>
                 </div>
                 
-                <button id="generateVideo" class="btn btn-secondary" style="display: none;">
-                    🎥 Create Video
+                <button id="copyButton" class="btn" style="display: none; background: #4CAF50; margin-top: 10px;">
+                    📋 Copy Script
                 </button>
-            </div>
-            
-            <!-- Video Generation Panel -->
-            <div class="panel full-width">
-                <h2>🎞️ Generated Video</h2>
-                
-                <div id="loadingVideo" class="loading">
-                    <div class="spinner"></div>
-                    Creating your video... This may take a minute (first time can be slower)
-                </div>
-                
-                <div id="videoOutput" style="display: none;">
-                    <video id="videoPlayer" controls></video>
-                    <button id="downloadVideo" class="btn btn-primary">
-                        ⬇️ Download Video
-                    </button>
-                </div>
             </div>
         </div>
     </div>
     
     <script>
         const scriptForm = document.getElementById('scriptForm');
-        const generateVideoBtn = document.getElementById('generateVideo');
+        const copyButton = document.getElementById('copyButton');
         let currentScript = '';
         
         // Generate Script
@@ -280,7 +238,6 @@
             const style = document.getElementById('style').value;
             
             showLoading('loadingScript', true);
-            hideOutput('videoOutput');
             
             try {
                 const response = await fetch('/generate-script', {
@@ -304,29 +261,13 @@
             }
         });
         
-        // Generate Video
-        generateVideoBtn.addEventListener('click', async () => {
-            showLoading('videoOutput', true);
-            
-            try {
-                const response = await fetch('/generate-video', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ script: currentScript })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    displayVideo(data);
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (error) {
-                alert('Error generating video: ' + error.message);
-            } finally {
-                showLoading('videoOutput', false);
-            }
+        // Copy Script
+        copyButton.addEventListener('click', () => {
+            navigator.clipboard.writeText(currentScript);
+            copyButton.textContent = '✅ Copied!';
+            setTimeout(() => {
+                copyButton.textContent = '📋 Copy Script';
+            }, 2000);
         });
         
         function displayScript(data) {
@@ -336,45 +277,11 @@
             document.getElementById('wordCount').textContent = data.word_count;
             document.getElementById('duration').textContent = Math.round(data.estimated_duration);
             document.getElementById('scriptMeta').style.display = 'flex';
-            document.getElementById('generateVideo').style.display = 'block';
+            document.getElementById('copyButton').style.display = 'block';
         }
-        
-        function displayVideo(data) {
-            const videoOutput = document.getElementById('videoOutput');
-            const videoPlayer = document.getElementById('videoPlayer');
-            const downloadBtn = document.getElementById('downloadVideo');
-    
-            // Set video source
-            videoPlayer.src = data.video_url;
-            videoPlayer.load();  // Force reload
-            videoOutput.style.display = 'block';
-    
-            // Scroll to video
-            setTimeout(() => {
-            videoPlayer.scrollIntoView({ behavior: 'smooth' });
-            }, 500);
-    
-        downloadBtn.onclick = () => {
-            const link = document.createElement('a');
-            link.href = data.video_url;
-            link.download = data.filename || 'video.mp4';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-    };
-}
         
         function showLoading(elementId, show) {
-            const element = document.getElementById(elementId);
-            if (show) {
-                element.style.display = 'block';
-            } else {
-                element.style.display = 'none';
-            }
-        }
-        
-        function hideOutput(elementId) {
-            document.getElementById(elementId).style.display = 'none';
+            document.getElementById(elementId).style.display = show ? 'block' : 'none';
         }
     </script>
 </body>
