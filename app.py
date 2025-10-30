@@ -39,7 +39,7 @@ def generate_script():
         }
         
         # Use Gemini API to generate script
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         full_prompt = f"{style_prompts.get(style, style_prompts['educational'])} Write a short video script about: {prompt}. Keep it to 2-3 sentences, suitable for a 30-60 second video."
         
         response = model.generate_content(full_prompt)
